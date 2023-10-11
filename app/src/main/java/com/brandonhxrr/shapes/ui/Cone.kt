@@ -21,8 +21,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun TridimensionalCone() {
-    var rotationState by remember { mutableStateOf(Offset(0f, 0f)) }
+fun TridimensionalCone(rotationState: Offset) {
+    var currentRotationState by remember { mutableStateOf(rotationState) }
 
     Canvas(
         modifier = Modifier
@@ -31,9 +31,9 @@ fun TridimensionalCone() {
             .padding(16.dp)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, _, _ ->
-                    rotationState = Offset(
-                        rotationState.x + pan.x / 4f,
-                        rotationState.y + pan.y / 4f
+                    currentRotationState = Offset(
+                        currentRotationState.x + pan.x,
+                        currentRotationState.y + pan.y
                     )
                 }
             }
@@ -44,55 +44,74 @@ fun TridimensionalCone() {
         val centerX = canvasWidth / 2
         val centerY = canvasHeight / 2
 
-        val coneSize = canvasWidth / 3
+        val coneRadius = canvasWidth / 4
+        val coneHeight = canvasHeight / 3
+        val baseVertices = 30
 
-        val basePointsCount = 24
-        val angleIncrement = 2 * PI / basePointsCount
-        val basePoints3D = mutableListOf<Triple<Float, Float, Float>>()
+        val rotatedPoints =
+            calculateRotatedPoints(currentRotationState, coneRadius, coneHeight, centerX, centerY)
 
-        for (i in 0 until basePointsCount) {
-            val angle = i * angleIncrement
-            val x = coneSize * cos(angle)
-            val y = coneSize * sin(angle)
-            basePoints3D.add(Triple(x.toFloat(), y.toFloat(), 0f))
-        }
-
-        val topPoint3D = Triple(0f, 0f, -coneSize * 2)
-
-        val rotatedBasePoints = basePoints3D.map { point ->
-            val (x, y, z) = point
-            val rotatedX = x * cos(rotationState.y) - z * sin(rotationState.y)
-            val rotatedZ = x * sin(rotationState.y) + z * cos(rotationState.y)
-            val rotatedY = y * cos(rotationState.x) - rotatedZ * sin(rotationState.x)
-            val rotatedZFinal = y * sin(rotationState.x) + rotatedZ * cos(rotationState.x)
-            Triple(rotatedX, rotatedY, rotatedZFinal)
-        }
-
-        val perspective = 2 * canvasWidth
-
-        val basePoints2D = rotatedBasePoints.map { point ->
-            val (x, y, z) = point
-            val scaleFactor = perspective / (perspective + z)
-            Offset(centerX + x * scaleFactor, centerY + y * scaleFactor)
-        }
-
-        for (i in 0 until basePointsCount) {
+        for (i in 0 until baseVertices) {
             drawLine(
                 color = Color.Black,
-                start = basePoints2D[i],
-                end = basePoints2D[(i + 1) % basePointsCount],
+                start = rotatedPoints[i],
+                end = rotatedPoints[(i + 1) % baseVertices],
                 strokeWidth = 2f
             )
         }
 
-        val topPoint2D = Offset(centerX, centerY - coneSize * 2)
-        for (i in 0 until basePointsCount) {
+        val topPoint = calculateRotatedTopPoint(currentRotationState, coneRadius, coneHeight, centerX, centerY)
+        for (i in 0 until baseVertices) {
             drawLine(
                 color = Color.Black,
-                start = basePoints2D[i],
-                end = topPoint2D,
+                start = rotatedPoints[i],
+                end = topPoint,
                 strokeWidth = 2f
             )
         }
     }
+}
+
+private fun calculateRotatedPoints(
+    rotation: Offset, radius: Float, height: Float, centerX: Float, centerY: Float
+): List<Offset> {
+    val rotationX = rotation.x * PI / 180  // Rotación en torno al eje X
+    val rotationY = rotation.y * PI / 180  // Rotación en torno al eje Y
+
+    val points = mutableListOf<Offset>()
+    val baseVertices = 30
+
+    for (i in 0 until baseVertices) {
+        val angle = 2 * PI * i / baseVertices
+        val x = radius * cos(angle)
+        val y = -height / 2
+        val z = radius * sin(angle)
+
+        val rotatedY = y * cos(rotationX) - z * sin(rotationX)
+        val rotatedZ = y * sin(rotationX) + z * cos(rotationX)
+
+        val rotatedX = x * cos(rotationY) - rotatedZ * sin(rotationY)
+        val rotatedZFinal = x * sin(rotationY) + rotatedZ * cos(rotationY)
+
+        points.add(Offset((centerX + rotatedX).toFloat(), (centerY + rotatedY).toFloat()))
+    }
+
+    return points
+}
+
+private fun calculateRotatedTopPoint(rotation: Offset, radius: Float, height: Float, centerX: Float, centerY: Float): Offset {
+    val rotationX = rotation.x * PI / 180
+    val rotationY = rotation.y * PI / 180
+
+    val x = 0f
+    val y = height / 2
+    val z = 0f
+
+    val rotatedX = x * cos(rotationY) - z * sin(rotationY)
+    val rotatedZ = x * sin(rotationY) + z * cos(rotationY)
+
+    val rotatedYFinal = y * cos(rotationX) - rotatedZ * sin(rotationX)
+    val rotatedZFinal = y * sin(rotationX) + rotatedZ * cos(rotationX)
+
+    return Offset((centerX + rotatedX).toFloat(), (centerY + rotatedYFinal).toFloat())
 }
