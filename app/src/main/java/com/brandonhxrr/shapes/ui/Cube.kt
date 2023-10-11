@@ -22,19 +22,19 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun TridimensionalCube() {
-    var rotationState by remember { mutableStateOf(Offset(0f, 0f)) }
+fun TridimensionalCube(rotationState: Offset) {
+
+    var currentRotationState by remember { mutableStateOf(rotationState) }
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .background(yellow)
             .padding(16.dp)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, _, _ ->
-                    rotationState = Offset(
-                        rotationState.x + pan.x,
-                        rotationState.y + pan.y
+                    currentRotationState = Offset(
+                        currentRotationState.x + pan.x,
+                        currentRotationState.y + pan.y
                     )
                 }
             }
@@ -48,7 +48,7 @@ fun TridimensionalCube() {
 
             val cubeSize = canvasWidth / 2
 
-            val rotatedPoints = calculateRotatedPoints(rotationState, cubeSize, centerX, centerY)
+            val rotatedPoints = calculateRotatedPoints(currentRotationState, cubeSize, centerX, centerY)
 
             val lines = listOf(
                 Pair(0, 1),
@@ -126,8 +126,3 @@ private fun calculateRotatedPoints(
 
     return points
 }
-
-
-
-
-
