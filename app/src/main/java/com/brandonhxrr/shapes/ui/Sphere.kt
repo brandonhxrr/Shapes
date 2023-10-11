@@ -21,11 +21,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun Esfera() {
-    var rotationState by remember { mutableStateOf(Offset(0f, 0f)) }
-
-    val radius = 200f
-    val segments = 20
+fun Esfera(rotationState : Offset) {
+    var currentRotationState by remember { mutableStateOf(rotationState) }
 
     Canvas(
         modifier = Modifier
@@ -34,15 +31,18 @@ fun Esfera() {
             .padding(16.dp)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, _, _ ->
-                    rotationState = Offset(
-                        rotationState.x + pan.x / 4f,
-                        rotationState.y + pan.y / 4f
+                    currentRotationState = Offset(
+                        currentRotationState.x + pan.x / 4f,
+                        currentRotationState.y + pan.y / 4f
                     )
                 }
             }
     ) {
         val canvasWidth = size.width
         val canvasHeight = size.height
+
+        val radius = canvasWidth / 2
+        val segments = 20
 
         val centerX = canvasWidth / 2
         val centerY = canvasHeight / 2
@@ -52,10 +52,10 @@ fun Esfera() {
         val perspective = 2 * canvasWidth // Ajuste de perspectiva
         val puntos2D = puntosEsfera.map { (x, y, z) ->
 
-            val rotatedX = x * cos(rotationState.y) - z * sin(rotationState.y)
-            val rotatedZ = x * sin(rotationState.y) + z * cos(rotationState.y)
-            val rotatedY = y * cos(rotationState.x) - rotatedZ * sin(rotationState.x)
-            val rotatedZFinal = y * sin(rotationState.x) + rotatedZ * cos(rotationState.x)
+            val rotatedX = x * cos(currentRotationState.y) - z * sin(currentRotationState.y)
+            val rotatedZ = x * sin(currentRotationState.y) + z * cos(currentRotationState.y)
+            val rotatedY = y * cos(currentRotationState.x) - rotatedZ * sin(currentRotationState.x)
+            val rotatedZFinal = y * sin(currentRotationState.x) + rotatedZ * cos(currentRotationState.x)
 
             val scaleFactor = perspective / (perspective + rotatedZFinal)
             Offset(centerX + rotatedX * scaleFactor, centerY - rotatedY * scaleFactor)
@@ -68,18 +68,16 @@ fun Esfera() {
                 val p3 = puntos2D[(i + 1) * segments * 2 + j]
                 val p4 = puntos2D[(i + 1) * segments * 2 + (j + 1) % (segments * 2)]
 
-                drawLine(color = Color.Black, start = p1, end = p2, strokeWidth = 2f)
-                drawLine(color = Color.Black, start = p1, end = p3, strokeWidth = 2f)
+                drawLine(color = Color.Black, start = p1, end = p2, strokeWidth = 1f)
+                drawLine(color = Color.Black, start = p1, end = p3, strokeWidth = 1f)
                 if (i < segments - 1) {
-                    drawLine(color = Color.Black, start = p3, end = p4, strokeWidth = 2f)
-                    drawLine(color = Color.Black, start = p2, end = p4, strokeWidth = 2f)
+                    drawLine(color = Color.Black, start = p3, end = p4, strokeWidth = 1f)
+                    drawLine(color = Color.Black, start = p2, end = p4, strokeWidth = 1f)
                 }
             }
         }
     }
 }
-
-
 
 fun calcularCoordenadasEsfera(radius: Float, segments: Int): List<Triple<Float, Float, Float>> {
     val puntos = mutableListOf<Triple<Float, Float, Float>>()
