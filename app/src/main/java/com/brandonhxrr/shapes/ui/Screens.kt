@@ -5,5 +5,6 @@ enum class Screens {
     Cube,
     Cylinder,
     Cone,
-    Sphere
+    Sphere,
+    AllInOne
 }
